@@ -45,6 +45,7 @@ class MpcWatcher(ParentedLet):
 class Player(gevent.Greenlet):
     def __init__(self, conf):
         gevent.Greenlet.__init__(self)
+        self.events_toggle_switch = False
         self.min_playlist_length = 10
         self.log = logging.getLogger(self.__class__.__name__)
         self.q = Queue()
@@ -78,7 +79,11 @@ class Player(gevent.Greenlet):
         mpd_client = self._get_mpd()
         assert type(songs) is dict
         assert 'uris' in songs
+        assert 'audiospec' in songs
         spec = songs['audiospec']
+        if self.events_toggle_switch is True:
+            self.log.info('Ignoring {} because of events_toggle_switch set True'.format(songs))
+            return
         for uri in songs['uris']:
             assert type(uri) is unicode
             self.log.info('Adding {} to playlist (from {}={})'.
@@ -116,5 +121,8 @@ class Player(gevent.Greenlet):
                     raise
                 except Exception as exc:
                     self.log.exception("Error while adding to queue; bad audiogen output?")
+                self.enqueue(args[0])
+            elif kind == 'eventtoggle':
+                self.events_toggle_switch = not self.events_toggle_switch
             else:
                 self.log.warning("Unknown message: %s" % str(value))

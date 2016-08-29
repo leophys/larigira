@@ -121,6 +121,11 @@ def rpc_wip():
                         ))
 
 
+@rpc.route('/event/toggle')
+def toggle_events():
+    send_to_parent('eventtoggle')
+    return jsonify(dict(status='All events toggled'))
+
 def create_app(queue, larigira):
     app = Flask('larigira')
     app.config.update(get_conf())
